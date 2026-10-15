@@ -28,10 +28,12 @@
       </a-asset-item>
     </a-assets>
 
-    <!-- Camara -->
+    <!-- Camara interactiva -->
     <a-camera
       position="0 0 0"
-      look-controls="enabled: false">
+      look-controls="enabled: false"
+      cursor="fuse: false; rayOrigin: mouse"
+      raycaster="objects: .interactivo">
     </a-camera>
 
     <!-- Reconocimiento del empaque -->
@@ -39,10 +41,12 @@
       id="targetEcoandino"
       mindar-image-target="targetIndex: 0">
 
-      <!-- Mazorca animada -->
+      <!-- Mazorca 3D -->
       <a-gltf-model
         id="modeloCacao"
+        class="interactivo"
         src="#cacao"
+
         position="0 0 0.02"
         rotation="0 0 0"
         scale="0.001 0.001 0.001"
@@ -63,6 +67,15 @@
           dur: 1800;
           easing: easeOutCubic;
           startEvents: iniciarEntrada;
+          autoplay: false"
+
+        animation__rotacion="
+          property: rotation;
+          from: 0 0 0;
+          to: 0 360 0;
+          dur: 2200;
+          easing: easeInOutCubic;
+          startEvents: girarCacao;
           autoplay: false">
       </a-gltf-model>
 
@@ -70,22 +83,47 @@
 
   </a-scene>
 
-  <!-- Control de animaciones -->
+  <!-- Control de interacciones -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
 
       const target = document.querySelector("#targetEcoandino");
       const cacao = document.querySelector("#modeloCacao");
 
+      let animacionTerminada = false;
+      let girando = false;
+
+      // Cuando aparece el empaque
       target.addEventListener("targetFound", () => {
 
-        // Reiniciar escala y posicion
+        animacionTerminada = false;
+        girando = false;
+
         cacao.setAttribute("scale", "0.001 0.001 0.001");
         cacao.setAttribute("position", "0 0 0.02");
+        cacao.setAttribute("rotation", "0 0 0");
 
-        // Ejecutar ambas animaciones
         cacao.emit("iniciarEntrada");
+      });
 
+      // Cuando termina la entrada
+      cacao.addEventListener("animationcomplete__entrada", () => {
+        animacionTerminada = true;
+      });
+
+      // Al tocar la mazorca
+      cacao.addEventListener("click", () => {
+
+        if (!animacionTerminada || girando) return;
+
+        girando = true;
+        cacao.emit("girarCacao");
+      });
+
+      // Al terminar la rotacion
+      cacao.addEventListener("animationcomplete__rotacion", () => {
+        girando = false;
+        cacao.setAttribute("rotation", "0 0 0");
       });
 
     });
