@@ -20,7 +20,7 @@
     device-orientation-permission-ui="enabled: false"
     renderer="colorManagement: true;">
 
-    <!-- Cargar modelo 3D -->
+    <!-- Modelo 3D -->
     <a-assets>
       <a-asset-item
         id="cacao"
@@ -54,22 +54,23 @@
           dur: 1800;
           easing: easeOutElastic;
           startEvents: iniciarEntrada;
+          autoplay: false"
+
+        animation__elevacion="
+          property: position;
+          from: 0 0 0.02;
+          to: 0 0 0.15;
+          dur: 1800;
+          easing: easeOutCubic;
+          startEvents: iniciarEntrada;
           autoplay: false">
       </a-gltf-model>
-      animation__elevacion="
-  property: position;
-  from: 0 0 0.02;
-  to: 0 0 0.15;
-  dur: 1800;
-  easing: easeOutCubic;
-  startEvents: iniciarEntrada;
-  autoplay: false"
 
     </a-entity>
 
   </a-scene>
 
-  <!-- Control de animacion -->
+  <!-- Control de animaciones -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
 
@@ -77,8 +78,14 @@
       const cacao = document.querySelector("#modeloCacao");
 
       target.addEventListener("targetFound", () => {
+
+        // Reiniciar escala y posicion
         cacao.setAttribute("scale", "0.001 0.001 0.001");
+        cacao.setAttribute("position", "0 0 0.02");
+
+        // Ejecutar ambas animaciones
         cacao.emit("iniciarEntrada");
+
       });
 
     });
