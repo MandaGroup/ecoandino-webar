@@ -1,8 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1"
@@ -28,12 +27,10 @@
       </a-asset-item>
     </a-assets>
 
-    <!-- Camara interactiva -->
+    <!-- Camara -->
     <a-camera
       position="0 0 0"
-      look-controls="enabled: false"
-      cursor="fuse: false; rayOrigin: mouse"
-      raycaster="objects: .interactivo">
+      look-controls="enabled: false">
     </a-camera>
 
     <!-- Reconocimiento del empaque -->
@@ -44,7 +41,6 @@
       <!-- Mazorca 3D -->
       <a-gltf-model
         id="modeloCacao"
-        class="interactivo"
         src="#cacao"
 
         position="0 0 0.02"
@@ -83,19 +79,27 @@
 
   </a-scene>
 
-  <!-- Control de interacciones -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
 
+      const scene = document.querySelector("a-scene");
       const target = document.querySelector("#targetEcoandino");
       const cacao = document.querySelector("#modeloCacao");
 
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+
       let animacionTerminada = false;
       let girando = false;
+      let targetVisible = false;
+      let modeloCargado = false;
 
-      // Cuando aparece el empaque
+      cacao.addEventListener("model-loaded", () => {
+        modeloCargado = true;
+      });
+
       target.addEventListener("targetFound", () => {
-
+        targetVisible = true;
         animacionTerminada = false;
         girando = false;
 
@@ -106,24 +110,71 @@
         cacao.emit("iniciarEntrada");
       });
 
-      // Cuando termina la entrada
+      target.addEventListener("targetLost", () => {
+        targetVisible = false;
+        animacionTerminada = false;
+      });
+
       cacao.addEventListener("animationcomplete__entrada", () => {
         animacionTerminada = true;
       });
 
-      // Al tocar la mazorca
-      cacao.addEventListener("click", () => {
-
-        if (!animacionTerminada || girando) return;
-
-        girando = true;
-        cacao.emit("girarCacao");
-      });
-
-      // Al terminar la rotacion
       cacao.addEventListener("animationcomplete__rotacion", () => {
         girando = false;
         cacao.setAttribute("rotation", "0 0 0");
+      });
+
+      function detectarToque(event) {
+
+        if (
+          !targetVisible ||
+          !modeloCargado ||
+          !animacionTerminada ||
+          girando
+        ) {
+          return;
+        }
+
+        const canvas = scene.canvas;
+        if (!canvas) return;
+
+        const rect = canvas.getBoundingClientRect();
+
+        pointer.x =
+          ((event.clientX - rect.left) / rect.width) * 2 - 1;
+
+        pointer.y =
+          -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        const camera = scene.camera;
+        if (!camera) return;
+
+        camera.updateMatrixWorld(true);
+        cacao.object3D.updateWorldMatrix(true, true);
+
+        raycaster.setFromCamera(pointer, camera);
+
+        const modelo = cacao.getObject3D("mesh");
+        if (!modelo) return;
+
+        const intersecciones = raycaster.intersectObject(
+          modelo,
+          true
+        );
+
+        if (intersecciones.length > 0) {
+          girando = true;
+          cacao.emit("girarCacao");
+        }
+      }
+
+      scene.addEventListener("loaded", () => {
+
+        scene.canvas.addEventListener(
+          "pointerdown",
+          detectarToque
+        );
+
       });
 
     });
