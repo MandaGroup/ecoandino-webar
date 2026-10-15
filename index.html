@@ -43,7 +43,7 @@
       <a-gltf-model
         id="modeloCacao"
         src="#cacao"
-        position="0 0 0.15"
+        position="0 0 0.02"
         rotation="0 0 0"
         scale="0.001 0.001 0.001"
 
@@ -56,6 +56,14 @@
           startEvents: iniciarEntrada;
           autoplay: false">
       </a-gltf-model>
+      animation__elevacion="
+  property: position;
+  from: 0 0 0.02;
+  to: 0 0 0.15;
+  dur: 1800;
+  easing: easeOutCubic;
+  startEvents: iniciarEntrada;
+  autoplay: false"
 
     </a-entity>
 
