@@ -39,16 +39,41 @@
     <a-entity mindar-image-target="targetIndex: 0">
 
       <!-- Mazorca de cacao 3D -->
-    <a-gltf-model
+    
+<a-gltf-model
   src="#cacao"
   position="0 0 0.15"
   rotation="0 0 0"
-scale="0.01 0.01 0.01"
+  scale="0.01 0.01 0.01"
+  animation__entrada="
+    property: scale;
+    from: 0.001 0.001 0.001;
+    to: 0.01 0.01 0.01;
+    dur: 1800;
+    easing: easeOutElastic;
+    startEvents: iniciarEntrada;
+    autoplay: false">
 </a-gltf-model>
 
-    </a-entity>
+
+    
+<a-entity
+  mindar-image-target="targetIndex: 0"
+  id="targetEcoandino">
+
 
   </a-scene>
 
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const target = document.querySelector("#targetEcoandino");
+    const cacao = target.querySelector("a-gltf-model");
+
+    target.addEventListener("targetFound", () => {
+      cacao.emit("iniciarEntrada");
+    });
+  });
+</script>
 </body>
 </html>
