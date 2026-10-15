@@ -9,7 +9,6 @@
   />
 
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 </head>
 
@@ -21,7 +20,7 @@
     device-orientation-permission-ui="enabled: false"
     renderer="colorManagement: true;">
 
-    <!-- Modelo 3D -->
+    <!-- Cargar modelo 3D -->
     <a-assets>
       <a-asset-item
         id="cacao"
@@ -29,51 +28,53 @@
       </a-asset-item>
     </a-assets>
 
-    <!-- Cámara -->
+    <!-- Camara -->
     <a-camera
       position="0 0 0"
       look-controls="enabled: false">
     </a-camera>
 
     <!-- Reconocimiento del empaque -->
-    <a-entity mindar-image-target="targetIndex: 0">
+    <a-entity
+      id="targetEcoandino"
+      mindar-image-target="targetIndex: 0">
 
-      <!-- Mazorca de cacao 3D -->
-    
-<a-gltf-model
-  src="#cacao"
-  position="0 0 0.15"
-  rotation="0 0 0"
-  scale="0.01 0.01 0.01"
-  animation__entrada="
-    property: scale;
-    from: 0.001 0.001 0.001;
-    to: 0.01 0.01 0.01;
-    dur: 1800;
-    easing: easeOutElastic;
-    startEvents: iniciarEntrada;
-    autoplay: false">
-</a-gltf-model>
+      <!-- Mazorca animada -->
+      <a-gltf-model
+        id="modeloCacao"
+        src="#cacao"
+        position="0 0 0.15"
+        rotation="0 0 0"
+        scale="0.001 0.001 0.001"
 
+        animation__entrada="
+          property: scale;
+          from: 0.001 0.001 0.001;
+          to: 0.01 0.01 0.01;
+          dur: 1800;
+          easing: easeOutElastic;
+          startEvents: iniciarEntrada;
+          autoplay: false">
+      </a-gltf-model>
 
-    
-<a-entity
-  mindar-image-target="targetIndex: 0"
-  id="targetEcoandino">
-
+    </a-entity>
 
   </a-scene>
 
+  <!-- Control de animacion -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
 
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const target = document.querySelector("#targetEcoandino");
-    const cacao = target.querySelector("a-gltf-model");
+      const target = document.querySelector("#targetEcoandino");
+      const cacao = document.querySelector("#modeloCacao");
 
-    target.addEventListener("targetFound", () => {
-      cacao.emit("iniciarEntrada");
+      target.addEventListener("targetFound", () => {
+        cacao.setAttribute("scale", "0.001 0.001 0.001");
+        cacao.emit("iniciarEntrada");
+      });
+
     });
-  });
-</script>
+  </script>
+
 </body>
 </html>
