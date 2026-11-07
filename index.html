@@ -47,19 +47,108 @@ function cancelTimers(){while(timers.length)clearTimeout(timers.pop())}
 function notice(s){const n=$('#note');n.textContent=s;n.style.display='block';setTimeout(()=>n.style.display='none',2600)}
 // Transparent botanical illustrations are generated locally; each plane is anchored to the MindAR target.
 // Replace canvases with approved PNG assets after visual review, without changing the tracking logic.
-function botanicalCanvas(side){
-const c=document.createElement('canvas');c.width=512;c.height=768;const x=c.getContext('2d');const flip=side==='right';x.save();if(flip){x.translate(512,0);x.scale(-1,1)}
-function stem(points,width){x.strokeStyle='#6c4b2b';x.lineWidth=width;x.lineCap='round';x.lineJoin='round';x.beginPath();points.forEach((p,i)=>i?x.lineTo(...p):x.moveTo(...p));x.stroke()}
-stem([[400,750],[365,580],[295,420],[170,240],[95,80]],18);
-stem([[310,455],[185,360],[85,365]],11);stem([[238,335],[300,210],[350,155]],10);
-function leaf(cx,cy,ang,size,color){x.save();x.translate(cx,cy);x.rotate(ang);x.fillStyle=color;x.beginPath();x.moveTo(0,0);x.bezierCurveTo(-size*.7,-size*.45,-size*.8,-size*.98,0,-size*1.6);x.bezierCurveTo(size*.8,-size*.98,size*.7,-size*.45,0,0);x.fill();x.strokeStyle='#a8bc72';x.lineWidth=2;x.beginPath();x.moveTo(0,0);x.lineTo(0,-size*1.35);x.stroke();x.restore()}
-[[350,575,.9,83],[294,423,-.8,90],[210,300,.65,83],[135,195,-.8,79],[100,362,-.85,72],[312,212,.7,65]].forEach((a,i)=>leaf(...a,i%2?'#3c8a31':'#5ba744'));
-function fruit(cx,cy,a){x.save();x.translate(cx,cy);x.rotate(a);const g=x.createLinearGradient(-38,0,42,0);g.addColorStop(0,'#904118');g.addColorStop(.5,'#eaa03b');g.addColorStop(1,'#9f501b');x.fillStyle=g;x.beginPath();x.moveTo(0,-76);x.bezierCurveTo(-62,-58,-64,50,0,91);x.bezierCurveTo(64,50,62,-58,0,-76);x.fill();x.strokeStyle='#b75e25';x.lineWidth=3;for(const dx of [-26,-12,12,26]){x.beginPath();x.moveTo(dx/8,-68);x.quadraticCurveTo(dx*2,0,dx/9,76);x.stroke()}x.restore()}
-fruit(310,510,.36);fruit(198,280,-.22);x.restore();return c;
+
+/* Real 3D botanical geometry. No billboard planes: branches, leaves and pods have thickness and parallax.
+   Art-direction prototype: replace with approved licensed textured GLB for final photorealism. */
+const bark=new THREE.MeshStandardMaterial({color:0x62452b,roughness:.97});
+const midrib=new THREE.MeshStandardMaterial({color:0x7a9440,roughness:.88});
+const leavesMat=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:.72,metalness:0});
+const podMats=[
+ new THREE.MeshStandardMaterial({vertexColors:true,roughness:.68,metalness:0}),
+ new THREE.MeshStandardMaterial({vertexColors:true,roughness:.7,metalness:0})
+];
+function v(x,y,z){return new THREE.Vector3(x,y,z)}
+function stem(parent,pts,r){
+ const path=new THREE.CatmullRomCurve3(pts.map(p=>v(...p)));
+ const mesh=new THREE.Mesh(new THREE.TubeGeometry(path,Math.max(10,pts.length*7),r,7,false),bark);
+ parent.add(mesh);return mesh;
 }
-function makePlane(side){const tex=new THREE.CanvasTexture(botanicalCanvas(side));tex.colorSpace=THREE.SRGBColorSpace;const mesh=new THREE.Mesh(new THREE.PlaneGeometry(.46,.85),new THREE.MeshBasicMaterial({map:tex,transparent:true,side:THREE.DoubleSide,depthWrite:false}));mesh.position.set(side==='left'?-0.86:0.86,.08,.025);mesh.rotation.y=side==='left'?.25:-.25;mesh.scale.setScalar(.001);vegetation.object3D.add(mesh);return mesh}
-const branches=[makePlane('left'),makePlane('right')];
-function enter(mesh,delay){schedule(()=>{const start=performance.now(),duration=1250;function tick(now){if(!visible||!vegetation.getAttribute('visible'))return;const t=Math.min(1,(now-start)/duration);const eased=1-Math.pow(1-t,3);mesh.scale.setScalar(Math.max(.001,eased));if(t<1)requestAnimationFrame(tick)}requestAnimationFrame(tick)},delay)}
+function leafGeometry(length,width){
+ const V=[],C=[],I=[], N=10,M=8;
+ const base=new THREE.Color(0x285c26),tip=new THREE.Color(0x77b84a);
+ for(let i=0;i<=N;i++){
+  const t=i/N,bulge=Math.pow(Math.sin(Math.PI*t),.8);
+  for(let j=0;j<=M;j++){
+   const u=j/M*2-1;
+   const x=u*width*bulge;
+   const y=t*length;
+   const z=.026*Math.sin(Math.PI*t)*(1-u*u)+.014*t*t+u*u*.008;
+   V.push(x,y,z);
+   const col=base.clone().lerp(tip,.15+.4*t+.13*(1-Math.abs(u)));
+   col.multiplyScalar(1+.025*Math.sin(21*t+12*u));
+   C.push(col.r,col.g,col.b);
+   if(i<N&&j<M){const a=i*(M+1)+j,b=a+M+1;I.push(a,b,a+1,b,b+1,a+1)}
+  }
+ }
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(V,3));
+ g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));
+ g.setIndex(I);g.computeVertexNormals();return g;
+}
+const leafGeom=leafGeometry(.20,.065);
+function leaf(parent,pos,rot,scale){
+ const holder=new THREE.Group();holder.position.set(...pos);holder.rotation.set(...rot);
+ const mesh=new THREE.Mesh(leafGeom,leavesMat);mesh.scale.setScalar(scale);holder.add(mesh);
+ const vein=new THREE.Mesh(new THREE.CylinderGeometry(.0009,.0014,.17,5),midrib);
+ vein.position.set(0,.09,0.008);vein.scale.setScalar(scale);holder.add(vein);
+ parent.add(holder);
+}
+function podGeometry(){
+ const V=[],C=[],I=[],rings=25,sections=32;
+ const low=new THREE.Color(0x8b3d1c),hi=new THREE.Color(0xe49a35);
+ for(let i=0;i<=rings;i++){
+  const t=i/rings,ang=t*Math.PI,centerY=(t-.5)*.225;
+  let baseR=Math.pow(Math.sin(ang),.72)*.055;
+  for(let j=0;j<=sections;j++){
+   const phi=j/sections*Math.PI*2;
+   const rib=1+.11*Math.cos(10*phi);
+   V.push(Math.cos(phi)*baseR*rib,centerY,Math.sin(phi)*baseR*rib*.83);
+   const col=low.clone().lerp(hi,.32+.25*Math.cos(phi-1)+.10*Math.cos(10*phi));
+   col.multiplyScalar(.9+.12*t);C.push(col.r,col.g,col.b);
+   if(i<rings&&j<sections){const a=i*(sections+1)+j,b=a+sections+1;I.push(a,a+1,b,a+1,b+1,b)}
+  }
+ }
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(V,3));
+ g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));
+ g.setIndex(I);g.computeVertexNormals();return g;
+}
+const podGeo=podGeometry();
+function fruit(parent,pos,rot,scale,variant){
+ const m=new THREE.Mesh(podGeo,podMats[variant]);m.position.set(...pos);m.rotation.set(...rot);m.scale.setScalar(scale);parent.add(m);
+}
+function botanical3D(side){
+ const sign=side==='left'?-1:1;
+ const g=new THREE.Group();g.position.set(sign*.79,.01,.02);
+ // 3D coordinates, depth staggered for parallax while respecting the blank central product area.
+ stem(g,[[sign*.08,-.34,0],[sign*.10,-.13,-.015],[sign*.13,.10,-.035],[sign*.26,.32,-.09],[sign*.33,.47,-.12]],.010);
+ stem(g,[[sign*.13,.08,-.035],[sign*.27,.13,.05],[sign*.37,.26,.10]],.006);
+ stem(g,[[sign*.25,.30,-.09],[sign*.12,.43,-.04],[sign*.14,.56,-.05]],.005);
+ [
+  [[sign*.09,-.16,0],[.25,0,sign*.9],.88],
+  [[sign*.12,.02,.015],[.1,0,-sign*.9],1.12],
+  [[sign*.22,.23,-.07],[-.12,.3,sign*.75],1.08],
+  [[sign*.31,.40,-.1],[0,.3,-sign*.7],.89],
+  [[sign*.29,.17,.065],[.28,-.2,sign*1.1],.98],
+  [[sign*.35,.25,.11],[-.25,0,-sign*1.2],1.06],
+  [[sign*.15,.47,-.05],[.15,0,sign*.8],.81],
+  [[sign*.13,.56,-.05],[.12,.2,-sign*.6],.73]
+ ].forEach(o=>leaf(g,...o));
+ fruit(g,[sign*.20,-.03,.075],[.16,.10,sign*.28],1.14,0);
+ fruit(g,[sign*.28,.31,.015],[-.23,.12,-sign*.24],.87,1);
+ g.scale.setScalar(.001);vegetation.object3D.add(g);return g;
+}
+const branches=[botanical3D('left'),botanical3D('right')];
+function enter(mesh,delay){schedule(()=>{
+ const started=performance.now(),duration=1400;
+ function tick(now){
+  if(!visible||!vegetation.getAttribute('visible'))return;
+  const t=Math.min(1,(now-started)/duration),e=1-Math.pow(1-t,3);
+  mesh.scale.setScalar(Math.max(.001,e));
+  if(t<1)requestAnimationFrame(tick);
+ }
+ requestAnimationFrame(tick);
+},delay)}
 function narrate(){if(!sound||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();const v=new SpeechSynthesisUtterance('Desde la selva peruana nace nuestro cacao. Naturaleza y tradición, en tus manos.');v.lang='es-PE';v.rate=1.03;const voices=speechSynthesis.getVoices();v.voice=voices.find(z=>z.lang==='es-PE')||voices.find(z=>z.lang.startsWith('es'))||null;speechSynthesis.speak(v)}catch(e){console.warn(e)}}
 function reset(){cancelTimers();run++;actions.classList.remove('show');$('#line').style.opacity=0;vegetation.setAttribute('visible',false);pod.setAttribute('visible',false);branches.forEach(b=>b.scale.setScalar(.001));pod.removeAttribute('animation__spin');pod.setAttribute('rotation','0 0 0');pod.setAttribute('position','0 0 .03');pod.setAttribute('scale','.001 .001 .001');if('speechSynthesis' in window)speechSynthesis.cancel()}
 function play(){reset();played=true;visible=true;const id=run;status.textContent='Ecoandino · experiencia activa';vegetation.setAttribute('visible',true);enter(branches[0],150);enter(branches[1],380);schedule(()=>{if(!visible||id!==run)return;pod.setAttribute('visible',true);pod.emit('grow');$('#line').style.opacity=1;narrate()},2500);schedule(()=>{if(!visible||id!==run)return;pod.setAttribute('animation__spin','property: rotation; from: 0 0 0; to: 0 360 0; dur: 3500; easing: easeInOutSine; autoplay: false; startEvents: spin');pod.emit('spin')},4100);schedule(()=>{if(!visible||id!==run)return;actions.classList.add('show');status.textContent='Explora el empaque y selecciona una opción'},7200)}
