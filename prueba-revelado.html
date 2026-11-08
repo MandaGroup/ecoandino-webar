@@ -1,0 +1,48 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script><script>
+AFRAME.registerComponent('branch-reveal',{
+ init:function(){
+  this.elapsed=0;this.tracking=false;this.ready=false;this.lastLost=0;
+  this.level={value:-.98};
+  this.el.object3D.visible=false;
+  this.found=()=>{if(!this.lastLost||performance.now()-this.lastLost>2000)this.elapsed=0;this.tracking=true;};
+  this.lost=()=>{this.tracking=false;this.lastLost=performance.now();};
+  this.loaded=()=>{
+   const mesh=this.el.getObject3D('mesh');if(!mesh)return;
+   mesh.traverse(node=>{
+    if(!node.isMesh)return;
+    const patch=source=>{
+     const mat=source.clone();mat.side=THREE.DoubleSide;
+     mat.onBeforeCompile=shader=>{
+      shader.uniforms.branchLevel=this.level;
+      shader.vertexShader='varying float branchY;\n'+shader.vertexShader;
+      shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nbranchY = position.y;');
+      shader.fragmentShader='uniform float branchLevel;\nvarying float branchY;\n'+shader.fragmentShader;
+      shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif (branchY > branchLevel) discard;');
+     };
+     mat.customProgramCacheKey=()=> 'ecoandino-branch-reveal-v1';
+     mat.needsUpdate=true;return mat;
+    };
+    node.material=Array.isArray(node.material)?node.material.map(patch):patch(node.material);
+   });
+   this.ready=true;this.el.object3D.visible=false;
+  };
+  this.el.addEventListener('model-loaded',this.loaded);
+  this.el.parentEl.addEventListener('targetFound',this.found);
+  this.el.parentEl.addEventListener('targetLost',this.lost);
+  if(this.el.getObject3D('mesh'))this.loaded();
+ },
+ tick:function(time,delta){
+  if(!this.ready)return;
+  if(this.tracking)this.elapsed+=Math.min(delta,100);
+  const delay=this.el.id.includes('right')?280:0;
+  const progress=Math.min(1,Math.max(0,(this.elapsed-delay)/2200));
+  this.level.value=-.98+1.96*(progress*progress*(3-2*progress));
+  this.el.object3D.visible=progress>0;
+ },
+ remove:function(){
+  this.el.removeEventListener('model-loaded',this.loaded);
+  this.el.parentEl.removeEventListener('targetFound',this.found);
+  this.el.parentEl.removeEventListener('targetLost',this.lost);
+ }
+});
+</script><style>body{margin:0;background:#17251d;font-family:Arial}#panel{position:fixed;z-index:9;top:12px;left:12px;color:white}button{padding:12px}</style></head><body><div id="panel">R3-06 · Vista del revelado, sin cámara<br><button id="replay">Repetir aparición</button></div><a-scene background="color:#17251d" vr-mode-ui="enabled:false"><a-entity id="pair" position="0 0 -3"><a-gltf-model id="left-preview" branch-reveal src="./Ecoandino_Rama_Izquierda_WebAR.glb" position="-.96 .03 .04" rotation="0 0 3" scale=".473 .473 .473"></a-gltf-model><a-gltf-model id="right-preview" branch-reveal src="./Ecoandino_Rama_Izquierda_WebAR.glb" position=".99 .06 .025" rotation="0 0 -4" scale="-.455 .455 .455"></a-gltf-model><a-plane color="#335541" width="1" height="1.5" position="0 0 -.05"></a-plane></a-entity><a-camera look-controls="enabled:false" wasd-controls="enabled:false"></a-camera></a-scene><script>document.querySelector('#replay').onclick=()=>{for(const el of document.querySelectorAll('[branch-reveal]')){const c=el.components['branch-reveal'];c.elapsed=0;c.lastLost=0;}document.querySelector('#pair').emit('targetFound');};</script></body></html>
