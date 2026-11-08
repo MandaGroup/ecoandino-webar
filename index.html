@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<a-scene id="scene" mindar-image="imageTargetSrc: ./ecoandino.mind; autoStart: false;" renderer="colorManagement: true; antialias: true; alpha: true" background="color: #000000; transparent: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+<a-scene id="scene" mindar-image="imageTargetSrc: ./ecoandino-dual.mind; autoStart: false;" renderer="colorManagement: true; antialias: true; alpha: true" background="color: #000000; transparent: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
 <a-assets><a-asset-item id="cacao" src="./cacao.glb"></a-asset-item></a-assets>
 <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
 <a-entity id="marker" mindar-image-target="targetIndex:0">
@@ -30,10 +30,8 @@ animation__spin="property:rotation;from:0 0 0;to:0 360 0;dur:3500;easing:easeInO
 (function(){
 'use strict';
 const $=s=>document.querySelector(s),scene=$('#scene'),marker=$('#marker'),marker2=$('#marker2'),pod=$('#pod'),vegetation=$('#vegetation'),status=$('#status'),actions=$('#actions');
-// The compiled two-target .mind is selected only after it has been generated and uploaded.
-// Until then, the original one-target file remains active and the stable preview continues working.
-const dualTargetsReady = new URLSearchParams(location.search).get('dual') === '1';
-if(dualTargetsReady)scene.setAttribute('mindar-image','imageTargetSrc: ./ecoandino-dual.mind; autoStart: false;');
+// Two image targets: 0 = white nibs with yacón, 1 = brown cacao powder.
+const dualTargetsReady = true;
 let visible=false,started=false,sound=true,played=false,lostAt=0,run=0;
 const timers=[];
 function repairCameraLayer(){
@@ -173,7 +171,7 @@ marker.addEventListener('targetFound',()=>onFound(marker,dualTargetsReady?'Nibs 
 marker.addEventListener('targetLost',()=>onLost(marker));
 marker2.addEventListener('targetFound',()=>onFound(marker2,'Cacao criollo en polvo'));
 marker2.addEventListener('targetLost',()=>onLost(marker2));
-$('#begin').addEventListener('click',async()=>{if(started)return;started=true;$('#begin').disabled=true;try{if(!scene.hasLoaded)await new Promise(r=>scene.addEventListener('loaded',r,{once:true}));await scene.systems['mindar-image-system'].start();repairCameraLayer();setTimeout(repairCameraLayer,500);$('#start').style.display='none';$('#mute').style.display='block';status.textContent='Enfoca el marcador de prueba; el empaque final requiere su propio reconocimiento'}catch(e){started=false;$('#begin').disabled=false;status.textContent='No se pudo activar la cámara';notice('Revisa los permisos de cámara y abre mediante HTTPS');console.error(e)}});
+$('#begin').addEventListener('click',async()=>{if(started)return;started=true;$('#begin').disabled=true;try{if(!scene.hasLoaded)await new Promise(r=>scene.addEventListener('loaded',r,{once:true}));await scene.systems['mindar-image-system'].start();repairCameraLayer();setTimeout(repairCameraLayer,500);$('#start').style.display='none';$('#mute').style.display='block';status.textContent='Enfoca cualquiera de los dos empaques Ecoandino'}catch(e){started=false;$('#begin').disabled=false;status.textContent='No se pudo activar la cámara';notice('Revisa los permisos de cámara y abre mediante HTTPS');console.error(e)}});
 $('#mute').addEventListener('click',()=>{sound=!sound;$('#mute').textContent=sound?'🔊':'🔇';if(!sound&&'speechSynthesis' in window)speechSynthesis.cancel()});
 actions.addEventListener('click',e=>{const btn=e.target.closest('button');if(!btn)return;notice(btn.dataset.action+': enlace pendiente de configurar con Ecoandino')});
 window.addEventListener('pagehide',()=>{cancelTimers();if('speechSynthesis' in window)speechSynthesis.cancel()});
