@@ -9,6 +9,54 @@
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:transparent;color:white}#ar-stage{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:hidden}#ar-stage>video{max-width:none!important;max-height:none!important;z-index:0!important}a-scene{position:absolute;inset:0;z-index:1;width:100%!important;height:100%!important;background:transparent!important}.a-canvas{width:100%!important;height:100%!important;background:transparent!important}video[src]{max-width:none}body>video,body>.mindar-ui-overlay~video{z-index:0!important}#ui{position:fixed;z-index:10;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:space-between;flex-direction:column;padding:calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom))}#status{background:#102819dc;padding:10px 16px;border:1px solid #ffffff44;border-radius:30px;font-size:13px;text-align:center}#lower{width:min(440px,100%)}#line{text-align:center;font-weight:bold;text-shadow:0 2px 8px #000;margin-bottom:16px;opacity:0;transition:opacity .5s}#actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;opacity:0;transform:translateY(22px);transition:opacity .4s,transform .4s;pointer-events:none}#actions.show{opacity:1;transform:none;pointer-events:auto}#actions button{color:white;background:#123b25e8;border:1px solid #ffffff66;border-radius:12px;padding:13px 7px;font-size:13px;font-weight:bold}#start{position:fixed;inset:0;z-index:20;background:#102819ee;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px}#start>div{max-width:340px}#start h1{font-size:25px}#start p{line-height:1.45;color:#dce8df}#begin{border:0;background:#91c53f;border-radius:12px;padding:15px 24px;font-size:16px;font-weight:bold;color:#18301b}#mute{display:none;position:fixed;z-index:11;right:15px;top:calc(env(safe-area-inset-top) + 72px);pointer-events:auto;border-radius:50%;padding:11px;background:#183a26;color:white;border:1px solid #ffffff55}#note{position:fixed;z-index:12;left:25px;right:25px;bottom:35%;text-align:center;background:#102819ed;border-radius:12px;padding:14px;display:none;font-size:13px}
 </style>
+<script>
+AFRAME.registerComponent('branch-reveal',{
+ init:function(){
+  this.elapsed=0;this.tracking=false;this.ready=false;this.lastLost=0;
+  this.level={value:-.98};
+  this.el.object3D.visible=false;
+  this.found=()=>{if(!this.lastLost||performance.now()-this.lastLost>2000)this.elapsed=0;this.tracking=true;};
+  this.lost=()=>{this.tracking=false;this.lastLost=performance.now();};
+  this.loaded=()=>{
+   const mesh=this.el.getObject3D('mesh');if(!mesh)return;
+   mesh.traverse(node=>{
+    if(!node.isMesh)return;
+    const patch=source=>{
+     const mat=source.clone();mat.side=THREE.DoubleSide;
+     mat.onBeforeCompile=shader=>{
+      shader.uniforms.branchLevel=this.level;
+      shader.vertexShader='varying float branchY;\n'+shader.vertexShader;
+      shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nbranchY = position.y;');
+      shader.fragmentShader='uniform float branchLevel;\nvarying float branchY;\n'+shader.fragmentShader;
+      shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif (branchY > branchLevel) discard;');
+     };
+     mat.customProgramCacheKey=()=> 'ecoandino-branch-reveal-v1';
+     mat.needsUpdate=true;return mat;
+    };
+    node.material=Array.isArray(node.material)?node.material.map(patch):patch(node.material);
+   });
+   this.ready=true;this.el.object3D.visible=false;
+  };
+  this.el.addEventListener('model-loaded',this.loaded);
+  this.el.parentEl.addEventListener('targetFound',this.found);
+  this.el.parentEl.addEventListener('targetLost',this.lost);
+  if(this.el.getObject3D('mesh'))this.loaded();
+ },
+ tick:function(time,delta){
+  if(!this.ready)return;
+  if(this.tracking)this.elapsed+=Math.min(delta,100);
+  const delay=this.el.id.includes('right')?280:0;
+  const progress=Math.min(1,Math.max(0,(this.elapsed-delay)/2200));
+  this.level.value=-.98+1.96*(progress*progress*(3-2*progress));
+  this.el.object3D.visible=progress>0;
+ },
+ remove:function(){
+  this.el.removeEventListener('model-loaded',this.loaded);
+  this.el.parentEl.removeEventListener('targetFound',this.found);
+  this.el.parentEl.removeEventListener('targetLost',this.lost);
+ }
+});
+</script>
 </head>
 <body>
 <div id="ar-stage">
@@ -16,7 +64,8 @@
 <a-assets timeout="30000"><a-asset-item id="cacao" src="./cacao.glb"></a-asset-item></a-assets>
 <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
 <a-entity id="marker" mindar-image-target="targetIndex:0">
-<a-gltf-model id="left-model" src="./Ecoandino_Rama_Izquierda_WebAR.glb" position="-.45 .05 .08" scale=".473 .473 .473"></a-gltf-model>
+<a-gltf-model id="left-model" branch-reveal src="./Ecoandino_Rama_Izquierda_WebAR.glb" position="-.96 .03 .04" rotation="0 0 3" scale=".473 .473 .473"></a-gltf-model>
+<a-gltf-model id="right-model" branch-reveal src="./Ecoandino_Rama_Izquierda_WebAR.glb" position=".99 .06 .025" rotation="0 0 -4" scale="-.455 .455 .455"></a-gltf-model>
 <a-entity id="vegetation" visible="false">
 
 </a-entity>
@@ -25,12 +74,13 @@ animation__grow="property:scale;from:.001 .001 .001;to:.01 .01 .01;dur:1300;easi
 animation__rise="property:position;from:0 0 .03;to:0 0 .16;dur:1300;easing:easeOutCubic;startEvents:grow;autoplay:false"
 animation__spin="property:rotation;from:0 0 0;to:0 360 0;dur:3500;easing:easeInOutSine;startEvents:spin;autoplay:false"></a-gltf-model>
 </a-entity>
-<a-entity id="marker2" mindar-image-target="targetIndex:1"><a-gltf-model id="left-model-brown" src="./Ecoandino_Rama_Izquierda_WebAR.glb" position="-.45 .05 .08" scale=".473 .473 .473"></a-gltf-model></a-entity>
+<a-entity id="marker2" mindar-image-target="targetIndex:1"><a-gltf-model id="left-model-brown" branch-reveal src="./Ecoandino_Rama_Izquierda_WebAR.glb" position="-.96 .03 .04" rotation="0 0 3" scale=".473 .473 .473"></a-gltf-model>
+<a-gltf-model id="right-model-brown" branch-reveal src="./Ecoandino_Rama_Izquierda_WebAR.glb" position=".99 .06 .025" rotation="0 0 -4" scale="-.455 .455 .455"></a-gltf-model></a-entity>
 </a-scene>
 </div>
 <div id="ui"><div id="status" role="status">Activa la experiencia</div><div id="lower"><div id="line">Desde la selva peruana, a tus manos.</div><div id="actions"><button data-action="Puntos de venta">📍 Puntos de venta</button><button data-action="Compras por mayor">📦 Compras por mayor</button><button data-action="Recetas">🍫 Recetas</button><button data-action="Sitio web">🌿 Sitio web</button></div></div></div>
 <button id="mute" aria-label="Activar o silenciar narración">🔊</button><div id="note" role="status"></div>
-<div id="start"><div><h1>Ecoandino cobra vida</h1><p>Apunta la cámara al empaque para descubrir nuestro cacao en realidad aumentada.</p><button id="begin">Comenzar experiencia</button><p style="font-size:12px">Prueba R3-05 · GLB realista · ambos empaques.</p></div></div>
+<div id="start"><div><h1>Ecoandino cobra vida</h1><p>Apunta la cámara al empaque para descubrir nuestro cacao en realidad aumentada.</p><button id="begin">Comenzar experiencia</button><p style="font-size:12px">Prueba R3-06 · dos ramas realistas · revelado progresivo · ambos empaques.</p></div></div>
 <script>
 (function(){
 'use strict';
@@ -166,13 +216,13 @@ const leftModel=$('#left-model');
 let leftModelReady=false;
 $('#begin').disabled=true;
 $('#begin').textContent='Cargando modelo 3D…';
-if(soloRama)$('#start p:last-child').textContent='Prueba R3-05 · SOLO modelo GLB nuevo · sin cacao anterior';
+if(soloRama)$('#start p:last-child').textContent='Prueba R3-06 · dos ramas realistas · revelado progresivo';
 function prepareLeftModel(){
  if(leftModelReady)return;
  const model=leftModel.getObject3D('mesh');
  if(!model)return;
  leftModelReady=true;
- status.textContent='R3-05 · modelo GLB cargado';
+ status.textContent='R3-06 · modelo GLB cargado';
  $('#begin').disabled=false;
  $('#begin').textContent='Comenzar experiencia';
 }
@@ -186,7 +236,7 @@ leftModel.addEventListener('model-loaded',prepareLeftModel);
 leftModel.addEventListener('model-error',modelFailure);
 prepareLeftModel();
 const branches=[];
-if(!soloRama)branches.push(botanical3D('right'));
+// Both sides now use the supplied GLB; no procedural branch is added.
 function enter(mesh,delay){schedule(()=>{
  const started=performance.now(),duration=1400,animationRun=run;
  function tick(now){
