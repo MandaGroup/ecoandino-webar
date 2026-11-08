@@ -123,7 +123,7 @@ function fruit(parent,pos,rot,scale,variant){
 }
 function botanical3D(side){
  const sign=side==='left'?-1:1;
- const g=new THREE.Group();g.position.set(sign*.235,-.035,.02);
+ const g=new THREE.Group();g.position.set(sign*.365,-.035,.02);
  // 3D coordinates, depth staggered for parallax while respecting the blank central product area.
  stem(g,[[sign*.08,-.34,0],[sign*.10,-.13,-.015],[sign*.13,.10,-.035],[sign*.26,.32,-.09],[sign*.33,.47,-.12]],.010);
  stem(g,[[sign*.13,.08,-.035],[sign*.27,.13,.05],[sign*.37,.26,.10]],.006);
