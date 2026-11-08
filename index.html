@@ -12,10 +12,12 @@
 </head>
 <body>
 <a-scene id="scene" mindar-image="imageTargetSrc: ./ecoandino-dual.mind; autoStart: false; filterMinCF: 0.003; filterBeta: 0.05; warmupTolerance: 5; missTolerance: 15;" renderer="colorManagement: true; antialias: true; alpha: true" background="color: #000000; transparent: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-<a-assets><a-asset-item id="cacao" src="./cacao.glb"></a-asset-item></a-assets>
+<a-assets timeout="30000"><a-asset-item id="rama-realista" src="./Ecoandino_Rama_Izquierda_WebAR.glb"></a-asset-item><a-asset-item id="cacao" src="./cacao.glb"></a-asset-item></a-assets>
 <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
 <a-entity id="marker" mindar-image-target="targetIndex:0">
-<a-entity id="vegetation" visible="false"></a-entity>
+<a-entity id="vegetation" visible="false">
+<a-entity id="left-branch" position="-.50 .05 .02" scale=".001 .001 .001"><a-gltf-model id="left-model" src="#rama-realista"></a-gltf-model></a-entity>
+</a-entity>
 <a-gltf-model id="pod" src="#cacao" visible="false" position="0 0 .03" rotation="0 0 0" scale=".001 .001 .001"
 animation__grow="property:scale;from:.001 .001 .001;to:.01 .01 .01;dur:1300;easing:easeOutCubic;startEvents:grow;autoplay:false"
 animation__rise="property:position;from:0 0 .03;to:0 0 .16;dur:1300;easing:easeOutCubic;startEvents:grow;autoplay:false"
@@ -25,7 +27,7 @@ animation__spin="property:rotation;from:0 0 0;to:0 360 0;dur:3500;easing:easeInO
 </a-scene>
 <div id="ui"><div id="status" role="status">Activa la experiencia</div><div id="lower"><div id="line">Desde la selva peruana, a tus manos.</div><div id="actions"><button data-action="Puntos de venta">📍 Puntos de venta</button><button data-action="Compras por mayor">📦 Compras por mayor</button><button data-action="Recetas">🍫 Recetas</button><button data-action="Sitio web">🌿 Sitio web</button></div></div></div>
 <button id="mute" aria-label="Activar o silenciar narración">🔊</button><div id="note" role="status"></div>
-<div id="start"><div><h1>Ecoandino cobra vida</h1><p>Apunta la cámara al empaque para descubrir nuestro cacao en realidad aumentada.</p><button id="begin">Comenzar experiencia</button><p style="font-size:12px">Prototipo: reconoce el marcador existente. Se añadirán los dos empaques con sticker cuando estén fotografiados.</p></div></div>
+<div id="start"><div><h1>Ecoandino cobra vida</h1><p>Apunta la cámara al empaque para descubrir nuestro cacao en realidad aumentada.</p><button id="begin">Comenzar experiencia</button><p style="font-size:12px">Prueba de rama izquierda 3D realista · reconoce ambos empaques Ecoandino.</p></div></div>
 <script>
 (function(){
 'use strict';
@@ -142,7 +144,33 @@ function botanical3D(side){
  fruit(g,[sign*.28,.31,.015],[-.23,.12,-sign*.24],.87,1);
  g.scale.setScalar(.001);vegetation.object3D.add(g);return g;
 }
-const branches=[botanical3D('left'),botanical3D('right')];
+// Keep growth/reset/tracking on the wrapper; normalize only the imported model.
+const leftBranch=$('#left-branch'),leftModel=$('#left-model');
+let leftModelReady=false;
+function prepareLeftModel(){
+ if(leftModelReady)return;
+ const model=leftModel.getObject3D('mesh');
+ if(!model)return;
+ const measure=model.clone();
+ measure.updateMatrixWorld(true);
+ const box=new THREE.Box3().setFromObject(measure),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
+ if(!Number.isFinite(size.y)||size.y<=0){modelFailure();return;}
+ // Preserve proportions and fit the botanical area beside the package.
+ const fit=Math.min(.46/size.x,.76/size.y,.32/Math.max(size.z,.001));
+ model.scale.multiplyScalar(fit);
+ model.position.sub(center.multiplyScalar(fit));
+ leftModelReady=true;
+}
+function modelFailure(){
+ leftModelReady=false;
+ status.textContent='No se pudo cargar la rama 3D';
+ $('#begin').disabled=true;
+ $('#begin').textContent='Recarga para volver a intentar';
+}
+leftModel.addEventListener('model-loaded',prepareLeftModel);
+leftModel.addEventListener('model-error',modelFailure);
+prepareLeftModel();
+const branches=[leftBranch.object3D,botanical3D('right')];
 function enter(mesh,delay){schedule(()=>{
  const started=performance.now(),duration=1400;
  function tick(now){
@@ -189,7 +217,7 @@ marker.addEventListener('targetFound',()=>onFound(marker,dualTargetsReady?'Nibs 
 marker.addEventListener('targetLost',()=>onLost(marker));
 marker2.addEventListener('targetFound',()=>onFound(marker2,'Cacao criollo en polvo'));
 marker2.addEventListener('targetLost',()=>onLost(marker2));
-$('#begin').addEventListener('click',async()=>{if(started)return;started=true;$('#begin').disabled=true;try{const unlockPromise=unlockNarration();if(!scene.hasLoaded)await new Promise(r=>scene.addEventListener('loaded',r,{once:true}));await scene.systems['mindar-image-system'].start();await unlockPromise;repairCameraLayer();setTimeout(repairCameraLayer,500);$('#start').style.display='none';$('#mute').style.display='block';status.textContent='Enfoca cualquiera de los dos empaques Ecoandino'}catch(e){started=false;$('#begin').disabled=false;status.textContent='No se pudo activar la cámara';notice('Revisa los permisos de cámara y abre mediante HTTPS');console.error(e)}});
+$('#begin').addEventListener('click',async()=>{if(started)return;started=true;$('#begin').disabled=true;try{const unlockPromise=unlockNarration();if(!scene.hasLoaded)await new Promise(r=>scene.addEventListener('loaded',r,{once:true}));if(!leftModelReady){prepareLeftModel();if(!leftModelReady)throw new Error('La rama 3D no está disponible');}await scene.systems['mindar-image-system'].start();await unlockPromise;repairCameraLayer();setTimeout(repairCameraLayer,500);$('#start').style.display='none';$('#mute').style.display='block';status.textContent='Enfoca cualquiera de los dos empaques Ecoandino'}catch(e){started=false;$('#begin').disabled=false;status.textContent='No se pudo activar la cámara';notice('Revisa los permisos de cámara y abre mediante HTTPS');console.error(e)}});
 $('#mute').addEventListener('click',()=>{sound=!sound;$('#mute').textContent=sound?'🔊':'🔇';if(!sound){narration.pause();narration.currentTime=0}else if(!audioUnlocked){unlockNarration()}});
 actions.addEventListener('click',e=>{const btn=e.target.closest('button');if(!btn)return;notice(btn.dataset.action+': enlace pendiente de configurar con Ecoandino')});
 window.addEventListener('pagehide',()=>{cancelTimers();if('speechSynthesis' in window)speechSynthesis.cancel()});
