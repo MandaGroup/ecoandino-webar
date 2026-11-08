@@ -16,20 +16,21 @@
 <a-assets timeout="30000"><a-asset-item id="cacao" src="./cacao.glb"></a-asset-item></a-assets>
 <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
 <a-entity id="marker" mindar-image-target="targetIndex:0">
+<a-gltf-model id="left-model" src="./Ecoandino_Rama_Izquierda_WebAR.glb" position="-.45 .05 .08" scale=".473 .473 .473"></a-gltf-model>
 <a-entity id="vegetation" visible="false">
-<a-entity id="left-branch" position="-.50 .05 .02" scale=".001 .001 .001"><a-gltf-model id="left-model" src="./Ecoandino_Rama_Izquierda_WebAR.glb" scale=".473 .473 .473"></a-gltf-model></a-entity>
+
 </a-entity>
 <a-gltf-model id="pod" src="#cacao" visible="false" position="0 0 .03" rotation="0 0 0" scale=".001 .001 .001"
 animation__grow="property:scale;from:.001 .001 .001;to:.01 .01 .01;dur:1300;easing:easeOutCubic;startEvents:grow;autoplay:false"
 animation__rise="property:position;from:0 0 .03;to:0 0 .16;dur:1300;easing:easeOutCubic;startEvents:grow;autoplay:false"
 animation__spin="property:rotation;from:0 0 0;to:0 360 0;dur:3500;easing:easeInOutSine;startEvents:spin;autoplay:false"></a-gltf-model>
 </a-entity>
-<a-entity id="marker2" mindar-image-target="targetIndex:1"></a-entity>
+<a-entity id="marker2" mindar-image-target="targetIndex:1"><a-gltf-model id="left-model-brown" src="./Ecoandino_Rama_Izquierda_WebAR.glb" position="-.45 .05 .08" scale=".473 .473 .473"></a-gltf-model></a-entity>
 </a-scene>
 </div>
 <div id="ui"><div id="status" role="status">Activa la experiencia</div><div id="lower"><div id="line">Desde la selva peruana, a tus manos.</div><div id="actions"><button data-action="Puntos de venta">📍 Puntos de venta</button><button data-action="Compras por mayor">📦 Compras por mayor</button><button data-action="Recetas">🍫 Recetas</button><button data-action="Sitio web">🌿 Sitio web</button></div></div></div>
 <button id="mute" aria-label="Activar o silenciar narración">🔊</button><div id="note" role="status"></div>
-<div id="start"><div><h1>Ecoandino cobra vida</h1><p>Apunta la cámara al empaque para descubrir nuestro cacao en realidad aumentada.</p><button id="begin">Comenzar experiencia</button><p style="font-size:12px">Prueba R3-04 · GLB realista · ambos empaques.</p></div></div>
+<div id="start"><div><h1>Ecoandino cobra vida</h1><p>Apunta la cámara al empaque para descubrir nuestro cacao en realidad aumentada.</p><button id="begin">Comenzar experiencia</button><p style="font-size:12px">Prueba R3-05 · GLB realista · ambos empaques.</p></div></div>
 <script>
 (function(){
 'use strict';
@@ -161,17 +162,17 @@ function botanical3D(side){
  g.scale.setScalar(.001);vegetation.object3D.add(g);return g;
 }
 // Keep growth/reset/tracking on the wrapper; normalize only the imported model.
-const leftBranch=$('#left-branch'),leftModel=$('#left-model');
+const leftModel=$('#left-model');
 let leftModelReady=false;
 $('#begin').disabled=true;
 $('#begin').textContent='Cargando modelo 3D…';
-if(soloRama)$('#start p:last-child').textContent='Prueba R3-04 · SOLO modelo GLB nuevo · sin cacao anterior';
+if(soloRama)$('#start p:last-child').textContent='Prueba R3-05 · SOLO modelo GLB nuevo · sin cacao anterior';
 function prepareLeftModel(){
  if(leftModelReady)return;
  const model=leftModel.getObject3D('mesh');
  if(!model)return;
  leftModelReady=true;
- status.textContent='R3-04 · modelo GLB cargado';
+ status.textContent='R3-05 · modelo GLB cargado';
  $('#begin').disabled=false;
  $('#begin').textContent='Comenzar experiencia';
 }
@@ -184,7 +185,7 @@ function modelFailure(){
 leftModel.addEventListener('model-loaded',prepareLeftModel);
 leftModel.addEventListener('model-error',modelFailure);
 prepareLeftModel();
-const branches=[leftBranch.object3D];
+const branches=[];
 if(!soloRama)branches.push(botanical3D('right'));
 function enter(mesh,delay){schedule(()=>{
  const started=performance.now(),duration=1400,animationRun=run;
@@ -216,7 +217,7 @@ function narrate(){
  narration.play().catch(err=>console.warn('Narration playback blocked or file unavailable',err));
 }
 function reset(){cancelTimers();run++;actions.classList.remove('show');$('#line').style.opacity=0;vegetation.setAttribute('visible',false);pod.setAttribute('visible',false);branches.forEach(b=>b.scale.setScalar(.001));pod.removeAttribute('animation__spin');pod.setAttribute('rotation','0 0 0');pod.setAttribute('position','0 0 .03');pod.setAttribute('scale','.001 .001 .001');narration.pause();narration.currentTime=0}
-function play(){reset();played=true;visible=true;const id=run;status.textContent='Ecoandino · experiencia activa';vegetation.setAttribute('visible',true);enter(branches[0],150);if(branches[1])enter(branches[1],380);schedule(()=>{if(!visible||id!==run)return;if(!soloRama){pod.setAttribute('visible',true);pod.emit('grow');}$('#line').textContent='Desde la selva central del Perú nace nuestro cacao. Descubre su origen.';$('#line').style.opacity=1;narrate()},2500);schedule(()=>{if(!visible||id!==run)return;pod.setAttribute('animation__spin','property: rotation; from: 0 0 0; to: 0 360 0; dur: 3500; easing: easeInOutSine; autoplay: false; startEvents: spin');pod.emit('spin')},4100);schedule(()=>{if(!visible||id!==run)return;actions.classList.add('show');status.textContent='Explora el empaque y selecciona una opción'},7200)}
+function play(){reset();played=true;visible=true;const id=run;status.textContent='Ecoandino · experiencia activa';vegetation.setAttribute('visible',true);if(branches[0])enter(branches[0],150);if(branches[1])enter(branches[1],380);schedule(()=>{if(!visible||id!==run)return;if(!soloRama){pod.setAttribute('visible',true);pod.emit('grow');}$('#line').textContent='Desde la selva central del Perú nace nuestro cacao. Descubre su origen.';$('#line').style.opacity=1;narrate()},2500);schedule(()=>{if(!visible||id!==run)return;pod.setAttribute('animation__spin','property: rotation; from: 0 0 0; to: 0 360 0; dur: 3500; easing: easeInOutSine; autoplay: false; startEvents: spin');pod.emit('spin')},4100);schedule(()=>{if(!visible||id!==run)return;actions.classList.add('show');status.textContent='Explora el empaque y selecciona una opción'},7200)}
 let activeTarget=null;
 function onFound(targetEl,label){
  if(activeTarget!==targetEl){activeTarget=targetEl;targetEl.appendChild(vegetation);targetEl.appendChild(pod);played=false;}
