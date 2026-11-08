@@ -20,14 +20,20 @@
 animation__grow="property:scale;from:.001 .001 .001;to:.01 .01 .01;dur:1300;easing:easeOutCubic;startEvents:grow;autoplay:false"
 animation__rise="property:position;from:0 0 .03;to:0 0 .16;dur:1300;easing:easeOutCubic;startEvents:grow;autoplay:false"
 animation__spin="property:rotation;from:0 0 0;to:0 360 0;dur:3500;easing:easeInOutSine;startEvents:spin;autoplay:false"></a-gltf-model>
-</a-entity></a-scene>
+</a-entity>
+<a-entity id="marker2" mindar-image-target="targetIndex:1"></a-entity>
+</a-scene>
 <div id="ui"><div id="status" role="status">Activa la experiencia</div><div id="lower"><div id="line">Desde la selva peruana, a tus manos.</div><div id="actions"><button data-action="Puntos de venta">📍 Puntos de venta</button><button data-action="Compras por mayor">📦 Compras por mayor</button><button data-action="Recetas">🍫 Recetas</button><button data-action="Sitio web">🌿 Sitio web</button></div></div></div>
 <button id="mute" aria-label="Activar o silenciar narración">🔊</button><div id="note" role="status"></div>
 <div id="start"><div><h1>Ecoandino cobra vida</h1><p>Apunta la cámara al empaque para descubrir nuestro cacao en realidad aumentada.</p><button id="begin">Comenzar experiencia</button><p style="font-size:12px">Prototipo: reconoce el marcador existente. Se añadirán los dos empaques con sticker cuando estén fotografiados.</p></div></div>
 <script>
 (function(){
 'use strict';
-const $=s=>document.querySelector(s),scene=$('#scene'),marker=$('#marker'),pod=$('#pod'),vegetation=$('#vegetation'),status=$('#status'),actions=$('#actions');
+const $=s=>document.querySelector(s),scene=$('#scene'),marker=$('#marker'),marker2=$('#marker2'),pod=$('#pod'),vegetation=$('#vegetation'),status=$('#status'),actions=$('#actions');
+// The compiled two-target .mind is selected only after it has been generated and uploaded.
+// Until then, the original one-target file remains active and the stable preview continues working.
+const dualTargetsReady = new URLSearchParams(location.search).get('dual') === '1';
+if(dualTargetsReady)scene.setAttribute('mindar-image','imageTargetSrc: ./ecoandino-dual.mind; autoStart: false;');
 let visible=false,started=false,sound=true,played=false,lostAt=0,run=0;
 const timers=[];
 function repairCameraLayer(){
@@ -152,8 +158,21 @@ function enter(mesh,delay){schedule(()=>{
 function narrate(){if(!sound||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();const v=new SpeechSynthesisUtterance('Desde la selva peruana nace nuestro cacao. Naturaleza y tradición, en tus manos.');v.lang='es-PE';v.rate=1.03;const voices=speechSynthesis.getVoices();v.voice=voices.find(z=>z.lang==='es-PE')||voices.find(z=>z.lang.startsWith('es'))||null;speechSynthesis.speak(v)}catch(e){console.warn(e)}}
 function reset(){cancelTimers();run++;actions.classList.remove('show');$('#line').style.opacity=0;vegetation.setAttribute('visible',false);pod.setAttribute('visible',false);branches.forEach(b=>b.scale.setScalar(.001));pod.removeAttribute('animation__spin');pod.setAttribute('rotation','0 0 0');pod.setAttribute('position','0 0 .03');pod.setAttribute('scale','.001 .001 .001');if('speechSynthesis' in window)speechSynthesis.cancel()}
 function play(){reset();played=true;visible=true;const id=run;status.textContent='Ecoandino · experiencia activa';vegetation.setAttribute('visible',true);enter(branches[0],150);enter(branches[1],380);schedule(()=>{if(!visible||id!==run)return;pod.setAttribute('visible',true);pod.emit('grow');$('#line').style.opacity=1;narrate()},2500);schedule(()=>{if(!visible||id!==run)return;pod.setAttribute('animation__spin','property: rotation; from: 0 0 0; to: 0 360 0; dur: 3500; easing: easeInOutSine; autoplay: false; startEvents: spin');pod.emit('spin')},4100);schedule(()=>{if(!visible||id!==run)return;actions.classList.add('show');status.textContent='Explora el empaque y selecciona una opción'},7200)}
-marker.addEventListener('targetFound',()=>{visible=true;if(!played||Date.now()-lostAt>2500)play();else status.textContent='Ecoandino · experiencia activa'});
-marker.addEventListener('targetLost',()=>{visible=false;lostAt=Date.now();status.textContent='Vuelve a enfocar el empaque'});
+let activeTarget=null;
+function onFound(targetEl,label){
+ if(activeTarget!==targetEl){activeTarget=targetEl;targetEl.appendChild(vegetation);targetEl.appendChild(pod);played=false;}
+ visible=true;
+ if(!played||Date.now()-lostAt>2500)play();
+ else status.textContent='Ecoandino · '+label;
+}
+function onLost(targetEl){
+ if(activeTarget!==targetEl)return;
+ visible=false;lostAt=Date.now();status.textContent='Vuelve a enfocar el empaque';
+}
+marker.addEventListener('targetFound',()=>onFound(marker,dualTargetsReady?'Nibs con yacón':'experiencia activa'));
+marker.addEventListener('targetLost',()=>onLost(marker));
+marker2.addEventListener('targetFound',()=>onFound(marker2,'Cacao criollo en polvo'));
+marker2.addEventListener('targetLost',()=>onLost(marker2));
 $('#begin').addEventListener('click',async()=>{if(started)return;started=true;$('#begin').disabled=true;try{if(!scene.hasLoaded)await new Promise(r=>scene.addEventListener('loaded',r,{once:true}));await scene.systems['mindar-image-system'].start();repairCameraLayer();setTimeout(repairCameraLayer,500);$('#start').style.display='none';$('#mute').style.display='block';status.textContent='Enfoca el marcador de prueba; el empaque final requiere su propio reconocimiento'}catch(e){started=false;$('#begin').disabled=false;status.textContent='No se pudo activar la cámara';notice('Revisa los permisos de cámara y abre mediante HTTPS');console.error(e)}});
 $('#mute').addEventListener('click',()=>{sound=!sound;$('#mute').textContent=sound?'🔊':'🔇';if(!sound&&'speechSynthesis' in window)speechSynthesis.cancel()});
 actions.addEventListener('click',e=>{const btn=e.target.closest('button');if(!btn)return;notice(btn.dataset.action+': enlace pendiente de configurar con Ecoandino')});
