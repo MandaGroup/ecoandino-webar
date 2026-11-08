@@ -60,7 +60,7 @@ AFRAME.registerComponent('branch-reveal',{
 </head>
 <body>
 <div id="ar-stage">
-<a-scene id="scene" mindar-image="imageTargetSrc: ./ecoandino-dual.mind; autoStart: false; filterMinCF: 0.003; filterBeta: 0.05; warmupTolerance: 5; missTolerance: 15; maxTrack: 2;" renderer="colorManagement: true; antialias: true; alpha: true" background="color: #000000; transparent: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+<a-scene id="scene" mindar-image="imageTargetSrc: ./ecoandino-dual.mind; autoStart: false; filterMinCF: 0.001; filterBeta: 0.005; warmupTolerance: 5; missTolerance: 15; maxTrack: 2;" renderer="colorManagement: true; antialias: true; alpha: true" background="color: #000000; transparent: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
 <a-assets timeout="30000"><a-asset-item id="cacao" src="./cacao.glb"></a-asset-item></a-assets>
 <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
 <a-entity id="marker" mindar-image-target="targetIndex:0">
@@ -80,7 +80,7 @@ animation__spin="property:rotation;from:0 0 0;to:0 360 0;dur:3500;easing:easeInO
 </div>
 <div id="ui"><div id="status" role="status">Activa la experiencia</div><div id="lower"><div id="line">Desde la selva peruana, a tus manos.</div><div id="actions"><button data-action="Puntos de venta">📍 Puntos de venta</button><button data-action="Compras por mayor">📦 Compras por mayor</button><button data-action="Recetas">🍫 Recetas</button><button data-action="Sitio web">🌿 Sitio web</button></div></div></div>
 <button id="mute" aria-label="Activar o silenciar narración">🔊</button><div id="note" role="status"></div>
-<div id="start"><div><h1>Ecoandino cobra vida</h1><p>Apunta la cámara al empaque para descubrir nuestro cacao en realidad aumentada.</p><button id="begin">Comenzar experiencia</button><p style="font-size:12px">Prueba R3-06 · dos ramas realistas · revelado progresivo · ambos empaques.</p></div></div>
+<div id="start"><div><h1>Ecoandino cobra vida</h1><p>Apunta la cámara al empaque para descubrir nuestro cacao en realidad aumentada.</p><button id="begin">Comenzar experiencia</button><p style="font-size:12px">Prueba R3-07 · dos ramas realistas · revelado progresivo · ambos empaques.</p></div></div>
 <script>
 (function(){
 'use strict';
@@ -216,13 +216,13 @@ const leftModel=$('#left-model');
 let leftModelReady=false;
 $('#begin').disabled=true;
 $('#begin').textContent='Cargando modelo 3D…';
-if(soloRama)$('#start p:last-child').textContent='Prueba R3-06 · dos ramas realistas · revelado progresivo';
+if(soloRama)$('#start p:last-child').textContent='Prueba R3-07 · dos ramas realistas · revelado progresivo';
 function prepareLeftModel(){
  if(leftModelReady)return;
  const model=leftModel.getObject3D('mesh');
  if(!model)return;
  leftModelReady=true;
- status.textContent='R3-06 · modelo GLB cargado';
+ status.textContent='R3-07 · modelo GLB cargado';
  $('#begin').disabled=false;
  $('#begin').textContent='Comenzar experiencia';
 }
