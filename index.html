@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<a-scene id="scene" mindar-image="imageTargetSrc: ./ecoandino-dual.mind; autoStart: false;" renderer="colorManagement: true; antialias: true; alpha: true" background="color: #000000; transparent: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+<a-scene id="scene" mindar-image="imageTargetSrc: ./ecoandino-dual.mind; autoStart: false; filterMinCF: 0.001; filterBeta: 10; warmupTolerance: 5; missTolerance: 10;" renderer="colorManagement: true; antialias: true; alpha: true" background="color: #000000; transparent: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
 <a-assets><a-asset-item id="cacao" src="./cacao.glb"></a-asset-item></a-assets>
 <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
 <a-entity id="marker" mindar-image-target="targetIndex:0">
@@ -123,7 +123,7 @@ function fruit(parent,pos,rot,scale,variant){
 }
 function botanical3D(side){
  const sign=side==='left'?-1:1;
- const g=new THREE.Group();g.position.set(sign*.79,.01,.02);
+ const g=new THREE.Group();g.position.set(sign*.44,.015,.02);
  // 3D coordinates, depth staggered for parallax while respecting the blank central product area.
  stem(g,[[sign*.08,-.34,0],[sign*.10,-.13,-.015],[sign*.13,.10,-.035],[sign*.26,.32,-.09],[sign*.33,.47,-.12]],.010);
  stem(g,[[sign*.13,.08,-.035],[sign*.27,.13,.05],[sign*.37,.26,.10]],.006);
@@ -148,7 +148,7 @@ function enter(mesh,delay){schedule(()=>{
  function tick(now){
   if(!visible||!vegetation.getAttribute('visible'))return;
   const t=Math.min(1,(now-started)/duration),e=1-Math.pow(1-t,3);
-  mesh.scale.setScalar(Math.max(.001,e));
+  mesh.scale.setScalar(Math.max(.001,e*.78));
   if(t<1)requestAnimationFrame(tick);
  }
  requestAnimationFrame(tick);
