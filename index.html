@@ -7,10 +7,11 @@
 <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:transparent;color:white}a-scene{position:fixed;inset:0;z-index:1;width:100%!important;height:100%!important;background:transparent!important}.a-canvas{width:100%!important;height:100%!important;background:transparent!important}video[src]{max-width:none}body>video,body>.mindar-ui-overlay~video{z-index:0!important}#ui{position:fixed;z-index:10;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:space-between;flex-direction:column;padding:calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom))}#status{background:#102819dc;padding:10px 16px;border:1px solid #ffffff44;border-radius:30px;font-size:13px;text-align:center}#lower{width:min(440px,100%)}#line{text-align:center;font-weight:bold;text-shadow:0 2px 8px #000;margin-bottom:16px;opacity:0;transition:opacity .5s}#actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;opacity:0;transform:translateY(22px);transition:opacity .4s,transform .4s;pointer-events:none}#actions.show{opacity:1;transform:none;pointer-events:auto}#actions button{color:white;background:#123b25e8;border:1px solid #ffffff66;border-radius:12px;padding:13px 7px;font-size:13px;font-weight:bold}#start{position:fixed;inset:0;z-index:20;background:#102819ee;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px}#start>div{max-width:340px}#start h1{font-size:25px}#start p{line-height:1.45;color:#dce8df}#begin{border:0;background:#91c53f;border-radius:12px;padding:15px 24px;font-size:16px;font-weight:bold;color:#18301b}#mute{display:none;position:fixed;z-index:11;right:15px;top:calc(env(safe-area-inset-top) + 72px);pointer-events:auto;border-radius:50%;padding:11px;background:#183a26;color:white;border:1px solid #ffffff55}#note{position:fixed;z-index:12;left:25px;right:25px;bottom:35%;text-align:center;background:#102819ed;border-radius:12px;padding:14px;display:none;font-size:13px}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:transparent;color:white}#ar-stage{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:hidden}#ar-stage>video{max-width:none!important;max-height:none!important;z-index:0!important}a-scene{position:absolute;inset:0;z-index:1;width:100%!important;height:100%!important;background:transparent!important}.a-canvas{width:100%!important;height:100%!important;background:transparent!important}video[src]{max-width:none}body>video,body>.mindar-ui-overlay~video{z-index:0!important}#ui{position:fixed;z-index:10;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:space-between;flex-direction:column;padding:calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom))}#status{background:#102819dc;padding:10px 16px;border:1px solid #ffffff44;border-radius:30px;font-size:13px;text-align:center}#lower{width:min(440px,100%)}#line{text-align:center;font-weight:bold;text-shadow:0 2px 8px #000;margin-bottom:16px;opacity:0;transition:opacity .5s}#actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;opacity:0;transform:translateY(22px);transition:opacity .4s,transform .4s;pointer-events:none}#actions.show{opacity:1;transform:none;pointer-events:auto}#actions button{color:white;background:#123b25e8;border:1px solid #ffffff66;border-radius:12px;padding:13px 7px;font-size:13px;font-weight:bold}#start{position:fixed;inset:0;z-index:20;background:#102819ee;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px}#start>div{max-width:340px}#start h1{font-size:25px}#start p{line-height:1.45;color:#dce8df}#begin{border:0;background:#91c53f;border-radius:12px;padding:15px 24px;font-size:16px;font-weight:bold;color:#18301b}#mute{display:none;position:fixed;z-index:11;right:15px;top:calc(env(safe-area-inset-top) + 72px);pointer-events:auto;border-radius:50%;padding:11px;background:#183a26;color:white;border:1px solid #ffffff55}#note{position:fixed;z-index:12;left:25px;right:25px;bottom:35%;text-align:center;background:#102819ed;border-radius:12px;padding:14px;display:none;font-size:13px}
 </style>
 </head>
 <body>
+<div id="ar-stage">
 <a-scene id="scene" mindar-image="imageTargetSrc: ./ecoandino-dual.mind; autoStart: false; filterMinCF: 0.003; filterBeta: 0.05; warmupTolerance: 5; missTolerance: 15;" renderer="colorManagement: true; antialias: true; alpha: true" background="color: #000000; transparent: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
 <a-assets timeout="30000"><a-asset-item id="rama-realista" src="./Ecoandino_Rama_Izquierda_WebAR.glb"></a-asset-item><a-asset-item id="cacao" src="./cacao.glb"></a-asset-item></a-assets>
 <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
@@ -25,9 +26,10 @@ animation__spin="property:rotation;from:0 0 0;to:0 360 0;dur:3500;easing:easeInO
 </a-entity>
 <a-entity id="marker2" mindar-image-target="targetIndex:1"></a-entity>
 </a-scene>
+</div>
 <div id="ui"><div id="status" role="status">Activa la experiencia</div><div id="lower"><div id="line">Desde la selva peruana, a tus manos.</div><div id="actions"><button data-action="Puntos de venta">📍 Puntos de venta</button><button data-action="Compras por mayor">📦 Compras por mayor</button><button data-action="Recetas">🍫 Recetas</button><button data-action="Sitio web">🌿 Sitio web</button></div></div></div>
 <button id="mute" aria-label="Activar o silenciar narración">🔊</button><div id="note" role="status"></div>
-<div id="start"><div><h1>Ecoandino cobra vida</h1><p>Apunta la cámara al empaque para descubrir nuestro cacao en realidad aumentada.</p><button id="begin">Comenzar experiencia</button><p style="font-size:12px">Prueba de rama izquierda 3D realista · reconoce ambos empaques Ecoandino.</p></div></div>
+<div id="start"><div><h1>Ecoandino cobra vida</h1><p>Apunta la cámara al empaque para descubrir nuestro cacao en realidad aumentada.</p><button id="begin">Comenzar experiencia</button><p style="font-size:12px">Prueba R3-02 · rama izquierda realista · ambos empaques.</p></div></div>
 <script>
 (function(){
 'use strict';
@@ -48,6 +50,19 @@ function repairCameraLayer(){
   return !!video;
 }
 
+// Keep camera cover and renderer dimensions synchronized after mobile viewport changes.
+function resizeAR(){
+ const system=scene.systems['mindar-image-system'];
+ if(system && system.controller && system.video && system.video.videoWidth){
+   system._resize();
+   const stage=$('#ar-stage');
+   if(scene.renderer)scene.renderer.setSize(stage.clientWidth,stage.clientHeight);
+ }
+ repairCameraLayer();
+}
+window.addEventListener('resize',resizeAR);
+if(window.visualViewport)window.visualViewport.addEventListener('resize',resizeAR);
+scene.addEventListener('arReady',resizeAR);
 function schedule(fn,delay){timers.push(setTimeout(fn,delay))}
 function cancelTimers(){while(timers.length)clearTimeout(timers.pop())}
 function notice(s){const n=$('#note');n.textContent=s;n.style.display='block';setTimeout(()=>n.style.display='none',2600)}
@@ -156,7 +171,7 @@ function prepareLeftModel(){
  const box=new THREE.Box3().setFromObject(measure),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
  if(!Number.isFinite(size.y)||size.y<=0){modelFailure();return;}
  // Preserve proportions and fit the botanical area beside the package.
- const fit=Math.min(.46/size.x,.76/size.y,.32/Math.max(size.z,.001));
+ const fit=.90/Math.max(size.x,size.y);
  model.scale.multiplyScalar(fit);
  model.position.sub(center.multiplyScalar(fit));
  leftModelReady=true;
@@ -217,7 +232,22 @@ marker.addEventListener('targetFound',()=>onFound(marker,dualTargetsReady?'Nibs 
 marker.addEventListener('targetLost',()=>onLost(marker));
 marker2.addEventListener('targetFound',()=>onFound(marker2,'Cacao criollo en polvo'));
 marker2.addEventListener('targetLost',()=>onLost(marker2));
-$('#begin').addEventListener('click',async()=>{if(started)return;started=true;$('#begin').disabled=true;try{const unlockPromise=unlockNarration();if(!scene.hasLoaded)await new Promise(r=>scene.addEventListener('loaded',r,{once:true}));if(!leftModelReady){prepareLeftModel();if(!leftModelReady)throw new Error('La rama 3D no está disponible');}await scene.systems['mindar-image-system'].start();await unlockPromise;repairCameraLayer();setTimeout(repairCameraLayer,500);$('#start').style.display='none';$('#mute').style.display='block';status.textContent='Enfoca cualquiera de los dos empaques Ecoandino'}catch(e){started=false;$('#begin').disabled=false;status.textContent='No se pudo activar la cámara';notice('Revisa los permisos de cámara y abre mediante HTTPS');console.error(e)}});
+$('#begin').addEventListener('click',async()=>{if(started)return;started=true;$('#begin').disabled=true;try{const unlockPromise=unlockNarration();if(!scene.hasLoaded)await new Promise(r=>scene.addEventListener('loaded',r,{once:true}));if(!leftModelReady)await new Promise((resolve,reject)=>{
+ const timeout=setTimeout(()=>done(new Error('No se pudo cargar la rama 3D. Recarga esta prueba.')),30000);
+ function done(error){clearTimeout(timeout);leftModel.removeEventListener('model-loaded',ready);leftModel.removeEventListener('model-error',failed);error?reject(error):resolve();}
+ function ready(){prepareLeftModel();done(leftModelReady?null:new Error('Modelo 3D inválido'));}
+ function failed(){done(new Error('No se pudo descargar la rama 3D'));}
+ leftModel.addEventListener('model-loaded',ready,{once:true});leftModel.addEventListener('model-error',failed,{once:true});
+ prepareLeftModel();if(leftModelReady)done();
+});await new Promise((resolve,reject)=>{
+ const timeout=setTimeout(()=>finish(new Error('La cámara tardó demasiado en iniciar')),45000);
+ function finish(error){clearTimeout(timeout);scene.removeEventListener('arReady',ready);scene.removeEventListener('arError',failed);error?reject(error):resolve();}
+ function ready(){finish();}
+ function failed(){finish(new Error('No se pudo iniciar el escaneo; revisa el permiso de cámara'));}
+ scene.addEventListener('arReady',ready,{once:true});
+ scene.addEventListener('arError',failed,{once:true});
+ try{scene.systems['mindar-image-system'].start();}catch(error){finish(error);}
+});await unlockPromise;repairCameraLayer();setTimeout(repairCameraLayer,500);$('#start').style.display='none';$('#mute').style.display='block';status.textContent='Enfoca cualquiera de los dos empaques Ecoandino'}catch(e){started=false;$('#begin').disabled=false;status.textContent=e.message;notice(e.message);console.error(e)}});
 $('#mute').addEventListener('click',()=>{sound=!sound;$('#mute').textContent=sound?'🔊':'🔇';if(!sound){narration.pause();narration.currentTime=0}else if(!audioUnlocked){unlockNarration()}});
 actions.addEventListener('click',e=>{const btn=e.target.closest('button');if(!btn)return;notice(btn.dataset.action+': enlace pendiente de configurar con Ecoandino')});
 window.addEventListener('pagehide',()=>{cancelTimers();if('speechSynthesis' in window)speechSynthesis.cancel()});
