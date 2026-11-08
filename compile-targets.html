@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ecoandino · Compilar dos objetivos MindAR</title>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js"></script>
+<style>body{font:16px system-ui,Arial;max-width:700px;margin:30px auto;padding:0 18px;color:#173725;background:#f7faf5}h1{font-size:26px}label{display:block;margin:20px 0 7px;font-weight:700}input{display:block;margin:5px 0 20px;width:100%}button,a.download{display:inline-block;padding:14px 19px;border:0;border-radius:9px;background:#296635;color:#fff;font-size:16px;text-decoration:none;cursor:pointer}button:disabled{opacity:.55;cursor:default}.card{background:white;padding:20px;border:1px solid #dce6d9;border-radius:14px}#download{display:none}#progress{white-space:pre-wrap;line-height:1.5}img{max-width:150px;max-height:200px;object-fit:contain;margin-right:12px}</style>
+</head><body><div class="card"><h1>Ecoandino: dos empaques, un reconocimiento</h1>
+<p>Selecciona los dos recortes preparados para este proyecto. El orden es obligatorio: primero <strong>blanco</strong>, después <strong>marrón</strong>. El archivo se compila localmente en tu navegador; las imágenes no se envían a un servidor de esta página.</p>
+<label for="white">Objetivo 0 — empaque blanco (nibs con yacón)</label><input id="white" type="file" accept="image/png,image/jpeg" required>
+<label for="brown">Objetivo 1 — empaque marrón (cacao criollo en polvo)</label><input id="brown" type="file" accept="image/png,image/jpeg" required>
+<div id="previews"></div><p><button id="compile">Compilar objetivos</button> <a id="download" class="download" download="ecoandino-dual.mind">Descargar ecoandino-dual.mind</a></p><p id="progress" role="status">Selecciona ambas imágenes para comenzar.</p>
+<p>Después de descargar el archivo <code>ecoandino-dual.mind</code>, súbelo a la rama <code>feature/demo-comercial-webar</code> del repositorio <code>MandaGroup/ecoandino-webar</code>. Solo entonces será posible probar <code>index.html?dual=1</code>.</p></div>
+<script>
+const $=id=>document.getElementById(id);let downloadURL=null;
+async function load(file){return new Promise((resolve,reject)=>{const url=URL.createObjectURL(file);const img=new Image();img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('No se pudo abrir '+file.name))};img.src=url})}
+$('compile').addEventListener('click',async()=>{const files=[$('white').files[0],$('brown').files[0]];if(files.some(x=>!x)){$('progress').textContent='Selecciona las dos imágenes.';return}
+$('compile').disabled=true;$('download').style.display='none';$('progress').textContent='Cargando imágenes…';
+try{if(!window.MINDAR||!window.MINDAR.Compiler)throw new Error('No se cargó el compilador. Verifica la conexión y vuelve a abrir la página.');
+const imgs=await Promise.all(files.map(load));const c=new window.MINDAR.Compiler();await c.compileImageTargets(imgs,p=>{$('progress').textContent='Compilando: '+Math.round(p)+'%';});const buf=await c.exportData();
+if(downloadURL)URL.revokeObjectURL(downloadURL);downloadURL=URL.createObjectURL(new Blob([buf],{type:'application/octet-stream'}));$('download').href=downloadURL;$('download').style.display='inline-block';$('progress').textContent='Objetivos compilados en orden blanco → marrón. Descarga el archivo y súbelo al repositorio.';
+}catch(e){$('progress').textContent='No se pudo compilar: '+e.message;console.error(e)}finally{$('compile').disabled=false}});
+</script></body></html>
